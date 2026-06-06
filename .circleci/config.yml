@@ -1,0 +1,54 @@
+version: 2.1
+
+orbs:
+  node: circleci/node@5.1.0
+  sonarcloud: sonarsource/sonarcloud@2.0.0
+
+jobs:
+  # ── Job 1: Install, test, and security audit ─────────────────────────────────
+  test-and-audit:
+    docker:
+      - image: cimg/node:18.17
+        environment:
+          JWT_SECRET: ci_test_secret_key
+          JWT_EXPIRES_IN: 1h
+          CUSTOMER_ORIGIN: http://localhost:5173
+          EMPLOYEE_ORIGIN: http://localhost:5174
+      # No external MongoDB needed — tests use mongodb-memory-server (in-process)
+    steps:
+      - checkout
+
+      - node/install-packages:
+          pkg-manager: npm
+          app-dir: backend
+
+      - run:
+          name: Run API tests
+          command: cd backend && npm test
+          # API testing — verifies endpoints behave correctly and securely
+
+      - run:
+          name: Software Composition Analysis (npm audit)
+          command: cd backend && npm audit --audit-level=moderate
+          # Fails the build if any moderate/high/critical CVEs are found in dependencies
+
+      - store_test_results:
+          path: backend/test-results
+
+  # ── Job 2: Static analysis with SonarCloud ───────────────────────────────────
+  sonar-scan:
+    docker:
+      - image: cimg/node:18.17
+    steps:
+      - checkout
+      - sonarcloud/scan
+      # Checks for: security hotspots, code smells, bugs, duplications, coverage
+
+workflows:
+  build-test-scan:
+    jobs:
+      - test-and-audit
+      - sonar-scan:
+          context: SonarCloud      # Requires SONAR_TOKEN in CircleCI project env vars
+          requires:
+            - test-and-audit       # Only scan after tests pass

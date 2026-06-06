@@ -1,0 +1,15 @@
+{
+  "name": "apds7311-payments",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install --prefix backend && npm install --prefix frontend && npm install --prefix employee-portal",
+    "dev": "concurrently --names \"API,CUSTOMER,EMPLOYEE\" --prefix-colors \"bgBlue.bold,bgGreen.bold,bgMagenta.bold\" \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\" \"npm --prefix employee-portal run dev\"",
+    "start": "concurrently --names \"API,CUSTOMER,EMPLOYEE\" --prefix-colors \"bgBlue.bold,bgGreen.bold,bgMagenta.bold\" \"npm --prefix backend start\" \"npm --prefix frontend run dev\" \"npm --prefix employee-portal run dev\"",
+    "test": "npm --prefix backend test",
+    "seed": "npm --prefix backend run seed"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

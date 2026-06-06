@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Environment secrets — never commit these
+.env
+*.key
+*.cert
+*.pem
+
+# SSL certificates directory
+backend/ssl/*
+!backend/ssl/.gitkeep
+
+# Build output
+dist/
+build/
+
+# Test coverage
+coverage/
+
+# OS/editor artifacts
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local tooling and drafts
+task1-docs/
+docgen/
+APDS7311_POE.docx
+
+# Instructions and rubric images
+instructions&rubric/
