@@ -1,23 +1,48 @@
-# Use the latest 2.1 version of CircleCI pipeline process engine.
-# See: https://circleci.com/docs/reference/configuration-reference
 version: 2.1
 
-# Orbs are reusable packages of CircleCI configuration that you may share across projects, enabling you to create encapsulated, parameterized commands, jobs, and executors that can be used across multiple projects.
-# See: https://circleci.com/docs/orbs/use/orb-intro/
 orbs:
-  # See the Node orb documentation here: https://circleci.com/developer/orbs/orb/circleci/node
-  node: circleci/node@5.2
+  sonarcloud: sonarsource/sonarcloud@2.0.0
 
-# Orchestrate jobs using workflows
-# See: https://circleci.com/docs/guides/orchestrate/workflows/ & https://circleci.com/docs/reference/configuration-reference/#workflows
+jobs:
+  test-and-audit:
+    docker:
+      - image: cimg/node:20.11
+        environment:
+          JWT_SECRET: ci_test_secret_key
+          JWT_EXPIRES_IN: 1h
+          CUSTOMER_ORIGIN: http://localhost:5173
+          EMPLOYEE_ORIGIN: http://localhost:5174
+          NODE_ENV: test
+    steps:
+      - checkout
+
+      - run:
+          name: Install backend dependencies
+          command: cd backend && npm ci
+
+      - run:
+          name: Run API tests
+          command: cd backend && npm test
+
+      - run:
+          name: Dependency vulnerability scan
+          command: cd backend && npm audit --audit-level=moderate
+
+      - store_test_results:
+          path: backend/test-results
+
+  sonar-scan:
+    docker:
+      - image: cimg/node:20.11
+    steps:
+      - checkout
+      - sonarcloud/scan
+
 workflows:
-  sample: # This is the name of the workflow, feel free to change it to better match your workflow.
-    # Inside the workflow, you define the jobs you want to run.
+  build-test-scan:
     jobs:
-      - node/test:
-          # This is the node version to use for the `cimg/node` tag
-          # Relevant tags can be found on the CircleCI Developer Hub
-          # https://circleci.com/developer/images/image/cimg/node
-          version: '16.10'
-          # If you are using yarn, change the line below from "npm" to "yarn"
-          pkg-manager: npm
+      - test-and-audit
+      - sonar-scan:
+          context: SonarCloud
+          requires:
+            - test-and-audit
